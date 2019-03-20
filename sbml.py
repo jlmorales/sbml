@@ -39,14 +39,6 @@ tokens = (
     'NUMBER',
     'PLUS','MINUS','TIMES','DIVIDE'
     )
-def t_NUMBER(t):
-    r'-?\d*(\d\.|\.\d)\d* | \d+'
-    try:
-        t.value = NumberNode(t.value)
-    except ValueError:
-        print("Integer value too large %d", t.value)
-        t.value = 0
-    return t
 
 # Tokens
 t_LPAREN  = r'\('
@@ -56,11 +48,20 @@ t_MINUS   = r'-'
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 
+def t_NUMBER(t):
+    r'-?\d*(\d\.|\.\d)\d* | \d+'
+    try:
+        t.value = NumberNode(t.value)
+    except ValueError:
+        print("Integer value too large %d", t.value)
+        t.value = 0
+    return t
 
 # Ignored characters
 t_ignore = " \t"
 
 def t_error(t):
+    print(t)
     t.lexer.skip(1)
     
 # Build the lexer
@@ -84,18 +85,14 @@ def p_expression_binop(t):
                   | expression TIMES expression
                   | expression DIVIDE expression'''
     if(t[2] == '/' and t[3].evaluate() == 0):
-        print("semantic error")
+        print("Semantic error")
+        raise SyntaxError
         
-        
-
     t[0] = BopNode(t[2], t[1], t[3])
     
-
-
 def p_expression_uminus(t):
-    'expression : MINUS factor %prec UMINUS'
+    'factor : MINUS factor %prec UMINUS'
     t[0] = NumberNode(str(-t[2].evaluate()))
-    print(t[0])
 
 def p_expression_group(t):
     'expression : LPAREN expression RPAREN'
@@ -111,9 +108,10 @@ def p_expression_factor(t):
 
 def p_error(t):
     print("Syntax error")
+    parser.restart()
 
 import ply.yacc as yacc
-yacc.yacc()
+parser = yacc.yacc()
 
 while 1:
     try:
