@@ -18,20 +18,39 @@ class NumberNode(Node):
     def evaluate(self):
         return self.value
 
+class StringNode(Node):
+    def __init__(self, v):
+        self.value = v
+
+    def evaluate(self):
+        return self.value
+
 class BopNode(Node):
     def __init__(self, op, v1, v2):
         #if number and number check rules if rules broken raise Syntax Error else assign v1 v2 op
         #if string and string check rules..
         #if list and list check rules..
         #else raise semantic error
-        if(type(v1) is NumberNode and type(v2) is NumberNode):
+        if(type(v1.evaluate()) in [float, int] and type(v2.evaluate()) in [float, int]):
             self.numberRules(op,v1,v2)
-        self.v1 = v1
-        self.v2 = v2
-        self.op = op
+            self.v1, self.v2, self.op = v1, v2, op
+        elif(type(v1.evaluate()) is str and type (v2.evaluate()) is str):
+            self.StringRules(op,v1,v2)
+            self.v1, self.v2, self.op = v1, v2, op
+        else:
+            # self.v1, self.v2, self.op = v1, v2, op
+            print("SEMANTIC ERROR")
+            raise SyntaxError
+        # self.v1 = v1
+        # self.v2 = v2
+        # self.op = op
 
     def evaluate(self):
         if (self.op == '+'):
+            if(type(self.v1.evaluate()) is str):
+                v1 , v2 = self.v1.evaluate(), self.v2.evaluate()
+                v1 , v2 = v1[1:len(v1) - 1], v2[1:len(v2) - 1]
+                return '"' + v1 + v2 + '"'
             return self.v1.evaluate() + self.v2.evaluate()
         elif (self.op == '-'):
             return self.v1.evaluate() - self.v2.evaluate()
@@ -46,20 +65,26 @@ class BopNode(Node):
 
     def numberRules(self, op, v1, v2):
         if op == '/' and v2.evaluate() == 0:
-            print("Semantic error")
+            print("SEMANTIC ERROR")
             raise SyntaxError
         if op == 'mod' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
-            print("Semantic error")
+            print("SEMANTIC ERROR")
             raise SyntaxError
         if op == 'div' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
-            print("Semantic error")
+            print("SEMANTIC ERROR")
+            raise SyntaxError
+
+    def StringRules(self, op, v1, v2):
+        if not op in ['+']:
+            print("SEMANTIC ERROR")
             raise SyntaxError
 
 
 tokens = (
     'LPAREN', 'RPAREN',
     'NUMBER',
-    'PLUS','MINUS','TIMES','DIVIDE','REMAINDER','QDIVIDE'
+    'PLUS','MINUS','TIMES','DIVIDE','REMAINDER','QDIVIDE',
+    'STRING'
     )
 
 # Tokens
@@ -71,6 +96,12 @@ t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 t_REMAINDER = 'mod'
 t_QDIVIDE = 'div'
+
+def t_STRING(t):
+    r'\"([^\\\n]|(\\.))*?\"'
+    # temp = t.value[1:len(t.value) - 1]
+    t.value = StringNode(t.value)
+    return t
 
 def t_NUMBER(t):
     r'-?\d*(\d\.|\.\d)\d* | \d+'
@@ -128,12 +159,17 @@ def p_factor_number(t):
     'factor : NUMBER'
     t[0] = t[1]
 
+def p_factor_string(t):
+    'expression : STRING'
+    t[0] = t[1]
+
+
 def p_expression_factor(t):
     '''expression : factor'''
     t[0] = t[1]
 
 def p_error(t):
-    print("Syntax error")
+    print("SYNTAX ERROR")
     parser.restart()
 
 import ply.yacc as yacc
