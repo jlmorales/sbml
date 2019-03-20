@@ -20,9 +20,12 @@ class NumberNode(Node):
 
 class BopNode(Node):
     def __init__(self, op, v1, v2):
-        if op == '/' and v2.evaluate() == 0:
-            print("Semantic error")
-            raise SyntaxError
+        #if number and number check rules if rules broken raise Syntax Error else assign v1 v2 op
+        #if string and string check rules..
+        #if list and list check rules..
+        #else raise semantic error
+        if(type(v1) is NumberNode and type(v2) is NumberNode):
+            self.numberRules(op,v1,v2)
         self.v1 = v1
         self.v2 = v2
         self.op = op
@@ -36,11 +39,27 @@ class BopNode(Node):
             return self.v1.evaluate() * self.v2.evaluate()
         elif (self.op == '/'):
             return self.v1.evaluate() / self.v2.evaluate()
+        elif (self.op == 'mod'):
+            return self.v1.evaluate() % self.v2.evaluate()
+        elif (self.op == 'div'):
+            return self.v1.evaluate() // self.v2.evaluate()    
+
+    def numberRules(self, op, v1, v2):
+        if op == '/' and v2.evaluate() == 0:
+            print("Semantic error")
+            raise SyntaxError
+        if op == 'mod' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
+            print("Semantic error")
+            raise SyntaxError
+        if op == 'div' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
+            print("Semantic error")
+            raise SyntaxError
+
 
 tokens = (
     'LPAREN', 'RPAREN',
     'NUMBER',
-    'PLUS','MINUS','TIMES','DIVIDE'
+    'PLUS','MINUS','TIMES','DIVIDE','REMAINDER','QDIVIDE'
     )
 
 # Tokens
@@ -50,6 +69,8 @@ t_PLUS    = r'\+'
 t_MINUS   = r'-'
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
+t_REMAINDER = 'mod'
+t_QDIVIDE = 'div'
 
 def t_NUMBER(t):
     r'-?\d*(\d\.|\.\d)\d* | \d+'
@@ -74,7 +95,7 @@ parser = lex.lex()
 # Parsing rules
 precedence = (
     ('left','PLUS','MINUS'),
-    ('left','TIMES','DIVIDE'),
+    ('left','TIMES','DIVIDE',"REMAINDER", 'QDIVIDE'),
     ('nonassoc','UMINUS'),
     )
 
@@ -86,7 +107,9 @@ def p_expression_binop(t):
     '''expression : expression PLUS expression
                   | expression MINUS expression
                   | expression TIMES expression
-                  | expression DIVIDE expression'''
+                  | expression DIVIDE expression
+                  | expression REMAINDER expression
+                  | expression QDIVIDE expression'''
     # if(t[2] == '/' and t[3].evaluate() == 0):
     #     print("Semantic error")
     #     raise SyntaxError
