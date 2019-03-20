@@ -20,6 +20,9 @@ class NumberNode(Node):
 
 class BopNode(Node):
     def __init__(self, op, v1, v2):
+        if op == '/' and v2.evaluate() == 0:
+            print("Semantic error")
+            raise SyntaxError
         self.v1 = v1
         self.v2 = v2
         self.op = op
@@ -84,9 +87,9 @@ def p_expression_binop(t):
                   | expression MINUS expression
                   | expression TIMES expression
                   | expression DIVIDE expression'''
-    if(t[2] == '/' and t[3].evaluate() == 0):
-        print("Semantic error")
-        raise SyntaxError
+    # if(t[2] == '/' and t[3].evaluate() == 0):
+    #     print("Semantic error")
+    #     raise SyntaxError
         
     t[0] = BopNode(t[2], t[1], t[3])
     
