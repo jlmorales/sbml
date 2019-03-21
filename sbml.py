@@ -38,12 +38,8 @@ class BopNode(Node):
             self.StringRules(op,v1,v2)
             self.v1, self.v2, self.op = v1, v2, op
         else:
-            # self.v1, self.v2, self.op = v1, v2, op
             print("SEMANTIC ERROR")
             raise SyntaxError
-        # self.v1 = v1
-        # self.v2 = v2
-        # self.op = op
 
     def evaluate(self):
         if (self.op == '+'):
@@ -99,7 +95,6 @@ t_QDIVIDE = 'div'
 
 def t_STRING(t):
     r'\"([^\\\n]|(\\.))*?\"'
-    # temp = t.value[1:len(t.value) - 1]
     t.value = StringNode(t.value)
     return t
 
@@ -111,6 +106,10 @@ def t_NUMBER(t):
         print("Integer value too large %d", t.value)
         t.value = 0
     return t
+
+def t_newline(t):
+    r'\n+'
+    t.lexer.lineno += len(t.value)
 
 # Ignored characters
 t_ignore = " \t"
@@ -141,9 +140,6 @@ def p_expression_binop(t):
                   | expression DIVIDE expression
                   | expression REMAINDER expression
                   | expression QDIVIDE expression'''
-    # if(t[2] == '/' and t[3].evaluate() == 0):
-    #     print("Semantic error")
-    #     raise SyntaxError
         
     t[0] = BopNode(t[2], t[1], t[3])
     
@@ -163,7 +159,6 @@ def p_factor_string(t):
     'expression : STRING'
     t[0] = t[1]
 
-
 def p_expression_factor(t):
     '''expression : factor'''
     t[0] = t[1]
@@ -175,9 +170,13 @@ def p_error(t):
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-while 1:
-    try:
-        s = input('input > ')   # Use raw_input on Python 2
-    except EOFError:
-        break
-    yacc.parse(s)
+import fileinput
+for line in fileinput.input():
+    yacc.parse(line)
+
+# while 1:
+#     try:
+#         s = input('input > ')   # Use raw_input on Python 2
+#     except EOFError:
+#         break
+#     yacc.parse(s)
