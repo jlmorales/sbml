@@ -25,6 +25,26 @@ class StringNode(Node):
     def evaluate(self):
         return self.value
 
+class SopNode(Node):
+    def __init__(self, op, v):
+        #first check that types are the same operations can only be done on values of the same type
+        #if number and number check rules if rules broken raise Syntax Error else assign v1 v2 op
+        #if string and string check rules..
+        #if list and list check rules..
+        #else raise semantic error
+        if(type(v.evaluate()) is bool):
+            self.boolRules(op, v)
+            self.v, self.op = v , op
+        else:
+            printerror()
+
+    def evaluate(self):
+        if self.op == 'not':
+            return not self.v.evaluate()
+    def boolRules(self, op, v):
+        if op not in ['not']:
+            printerror()
+
 class BopNode(Node):
     def __init__(self, op, v1, v2):
         #first check that types are the same operations can only be done on values of the same type
@@ -39,6 +59,7 @@ class BopNode(Node):
             self.StringRules(op,v1,v2)
             self.v1, self.v2, self.op = v1, v2, op
         elif(type(v1.evaluate()) is bool and type (v2.evaluate()) is bool):
+            self.boolRules(op,v1,v2)
             self.v1, self.v2, self.op = v1, v2, op
         else:
             printerror()
@@ -73,17 +94,19 @@ class BopNode(Node):
         elif (self.op == '<'):
             return self.v1.evaluate() < self.v2.evaluate()  
         elif (self.op == '>'):
-            return self.v1.evaluate() > self.v2.evaluate()       
-        elif (self.op == 'not'):
-            return not self.v1.evaluate()      
+            return self.v1.evaluate() > self.v2.evaluate()           
         elif (self.op == 'andalso'):
             return self.v1.evaluate() and self.v2.evaluate()
         elif (self.op == 'orelse'):
             return self.v1.evaluate() or self.v2.evaluate()    
         elif (self.op == 'in'):
-            return self.v1.evaluate() in self.v2.evaluate()            
+            v1 , v2 = self.v1.evaluate(), self.v2.evaluate()
+            v1 , v2 = v1[1:len(v1) - 1], v2[1:len(v2) - 1]
+            return v1 in v2            
         
     def numberRules(self, op, v1, v2):
+        if op not in ['+', '-', '*', '**', 'div','mod', '==','>=', '<=', '<>', '<', '>']:
+            printerror()
         if op == '/' and v2.evaluate() == 0:
             printerror()
         if op == 'mod' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
@@ -92,7 +115,11 @@ class BopNode(Node):
             printerror()
 
     def StringRules(self, op, v1, v2):
-        if not op in ['+','==','>=', '<=', '<>', '<', '>']:
+        if not op in ['+','==','>=', '<=', '<>', '<', '>', 'in']:
+            printerror()
+
+    def boolRules(self, op, v1, v2):
+        if not op in ['andalso', 'orelse']:
             printerror()
 
 def printerror():
@@ -202,13 +229,15 @@ def p_expression_binop(t):
                   | expression NEQ expression
                   | expression LT expression
                   | expression GT expression
-                  | expression NOT expression
                   | expression AND expression
                   | expression OR expression
                   | expression IN expression'''
         
     t[0] = BopNode(t[2], t[1], t[3])
-    
+def p_expression_sinop(t):
+    'expression : NOT expression %prec NOT'
+    t[0] = SopNode(t[1], t[2])
+
 def p_expression_uminus(t):
     'factor : MINUS factor %prec UMINUS'
     t[0] = NumberNode(str(-t[2].evaluate()))
@@ -237,13 +266,13 @@ def p_error(t):
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-# import fileinput
-# for line in fileinput.input():
-#     yacc.parse(line)
+import fileinput
+for line in fileinput.input():
+    yacc.parse(line)
 
-while 1:
-    try:
-        s = input('input > ')   # Use raw_input on Python 2
-    except EOFError:
-        break
-    yacc.parse(s)
+# while 1:
+#     try:
+#         s = input('input > ')   # Use raw_input on Python 2
+#     except EOFError:
+#         break
+#     yacc.parse(s)
