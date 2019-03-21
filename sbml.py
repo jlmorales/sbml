@@ -38,6 +38,8 @@ class BopNode(Node):
         elif(type(v1.evaluate()) is str and type (v2.evaluate()) is str):
             self.StringRules(op,v1,v2)
             self.v1, self.v2, self.op = v1, v2, op
+        elif(type(v1.evaluate()) is bool and type (v2.evaluate()) is bool):
+            self.v1, self.v2, self.op = v1, v2, op
         else:
             printerror()
 
@@ -72,6 +74,14 @@ class BopNode(Node):
             return self.v1.evaluate() < self.v2.evaluate()  
         elif (self.op == '>'):
             return self.v1.evaluate() > self.v2.evaluate()       
+        elif (self.op == 'not'):
+            return not self.v1.evaluate()      
+        elif (self.op == 'andalso'):
+            return self.v1.evaluate() and self.v2.evaluate()
+        elif (self.op == 'orelse'):
+            return self.v1.evaluate() or self.v2.evaluate()    
+        elif (self.op == 'in'):
+            return self.v1.evaluate() in self.v2.evaluate()            
         
     def numberRules(self, op, v1, v2):
         if op == '/' and v2.evaluate() == 0:
@@ -89,12 +99,14 @@ def printerror():
     print("SEMANTIC ERROR")
     lexer.lexpos = len(lexer.lexdata)
     raise SyntaxError
+
 reserved = {
     'div' : 'QDIVIDE',
     'mod' : 'REMAINDER',
     'andalso' : 'AND',
     'orelse' : 'OR',
     'not' : 'NOT',
+    'in' : 'IN'
 }
 
 tokens = [
@@ -114,8 +126,6 @@ t_MINUS   = r'-'
 t_EXPONENT   = r'\*\*'
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
-# t_REMAINDER = 'mod'
-# t_QDIVIDE = 'div'
 
 t_EQ = r'=='
 t_GEQ = r'>='
@@ -163,8 +173,14 @@ lexer = lex.lex()
 
 # Parsing rules
 precedence = (
+    ('left','OR'),
+    ('left','AND'),
+    ('left','NOT'),
+    ('left','EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT' ),
+    ('left','IN'),
     ('left','PLUS','MINUS'),
     ('left','TIMES','DIVIDE',"REMAINDER", 'QDIVIDE'),
+    ('left','EXPONENT'),
     ('nonassoc','UMINUS'),
     )
 
@@ -185,7 +201,11 @@ def p_expression_binop(t):
                   | expression LEQ expression
                   | expression NEQ expression
                   | expression LT expression
-                  | expression GT expression'''
+                  | expression GT expression
+                  | expression NOT expression
+                  | expression AND expression
+                  | expression OR expression
+                  | expression IN expression'''
         
     t[0] = BopNode(t[2], t[1], t[3])
     
@@ -211,18 +231,19 @@ def p_expression_factor(t):
 
 def p_error(t):
     print("SYNTAX ERROR")
+    lexer.lexpos = len(lexer.lexdata)
     parser.restart()
 
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-import fileinput
-for line in fileinput.input():
-    yacc.parse(line)
+# import fileinput
+# for line in fileinput.input():
+#     yacc.parse(line)
 
-# while 1:
-#     try:
-#         s = input('input > ')   # Use raw_input on Python 2
-#     except EOFError:
-#         break
-#     yacc.parse(s)
+while 1:
+    try:
+        s = input('input > ')   # Use raw_input on Python 2
+    except EOFError:
+        break
+    yacc.parse(s)
