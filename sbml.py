@@ -38,8 +38,7 @@ class BopNode(Node):
             self.StringRules(op,v1,v2)
             self.v1, self.v2, self.op = v1, v2, op
         else:
-            print("SEMANTIC ERROR")
-            raise SyntaxError
+            printerror()
 
     def evaluate(self):
         if (self.op == '+'):
@@ -61,20 +60,21 @@ class BopNode(Node):
 
     def numberRules(self, op, v1, v2):
         if op == '/' and v2.evaluate() == 0:
-            print("SEMANTIC ERROR")
-            raise SyntaxError
+            printerror()
         if op == 'mod' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
-            print("SEMANTIC ERROR")
-            raise SyntaxError
+            printerror()
         if op == 'div' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
-            print("SEMANTIC ERROR")
-            raise SyntaxError
+            printerror()
 
     def StringRules(self, op, v1, v2):
         if not op in ['+']:
-            print("SEMANTIC ERROR")
-            raise SyntaxError
+            printerror()
 
+def printerror():
+    print("SEMANTIC ERROR")
+    lexer.lexpos = len(lexer.lexdata)
+    raise SyntaxError
+    
 
 tokens = (
     'LPAREN', 'RPAREN',
@@ -120,7 +120,7 @@ def t_error(t):
     
 # Build the lexer
 import ply.lex as lex
-parser = lex.lex()
+lexer = lex.lex()
 
 # Parsing rules
 precedence = (
@@ -170,13 +170,13 @@ def p_error(t):
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-import fileinput
-for line in fileinput.input():
-    yacc.parse(line)
+# import fileinput
+# for line in fileinput.input():
+#     yacc.parse(line)
 
-# while 1:
-#     try:
-#         s = input('input > ')   # Use raw_input on Python 2
-#     except EOFError:
-#         break
-#     yacc.parse(s)
+while 1:
+    try:
+        s = input('input > ')   # Use raw_input on Python 2
+    except EOFError:
+        break
+    yacc.parse(s)
