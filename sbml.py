@@ -89,15 +89,21 @@ def printerror():
     print("SEMANTIC ERROR")
     lexer.lexpos = len(lexer.lexdata)
     raise SyntaxError
+reserved = {
+    'div' : 'QDIVIDE',
+    'mod' : 'REMAINDER',
+    'andalso' : 'AND',
+    'orelse' : 'OR',
+    'not' : 'NOT',
+}
 
-
-tokens = (
+tokens = [
     'LPAREN', 'RPAREN',
     'NUMBER',
-    'PLUS','MINUS','TIMES','DIVIDE','REMAINDER','QDIVIDE','EXPONENT',
+    'PLUS','MINUS','TIMES','DIVIDE','EXPONENT',
     'EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT',
     'STRING'
-    )
+] + list(reserved.values())
 
 # Tokens
 t_LPAREN  = r'\('
@@ -108,8 +114,8 @@ t_MINUS   = r'-'
 t_EXPONENT   = r'\*\*'
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
-t_REMAINDER = 'mod'
-t_QDIVIDE = 'div'
+# t_REMAINDER = 'mod'
+# t_QDIVIDE = 'div'
 
 t_EQ = r'=='
 t_GEQ = r'>='
@@ -117,6 +123,14 @@ t_LEQ = r'<='
 t_NEQ = r'<>'
 t_LT = r'<'
 t_GT = r'>'
+
+def t_ID(t):
+     r'[a-zA-Z_][a-zA-Z_0-9]*'
+     t.type = reserved.get(t.value,'ID')    # Check for reserved words
+     if(t.type == 'ID'):
+         t.lexer.skip(1)
+     else:
+         return t
 
 def t_STRING(t):
     r'\"([^\\\n]|(\\.))*?\"'
