@@ -27,6 +27,7 @@ class StringNode(Node):
 
 class BopNode(Node):
     def __init__(self, op, v1, v2):
+        #first check that types are the same operations can only be done on values of the same type
         #if number and number check rules if rules broken raise Syntax Error else assign v1 v2 op
         #if string and string check rules..
         #if list and list check rules..
@@ -57,7 +58,21 @@ class BopNode(Node):
             return self.v1.evaluate() % self.v2.evaluate()
         elif (self.op == 'div'):
             return self.v1.evaluate() // self.v2.evaluate()    
-
+        elif (self.op == '**'):
+            return self.v1.evaluate() ** self.v2.evaluate()  
+        elif (self.op == '=='):
+            return self.v1.evaluate() == self.v2.evaluate()  
+        elif (self.op == '>='):
+            return self.v1.evaluate() >= self.v2.evaluate()  
+        elif (self.op == '<='):
+            return self.v1.evaluate() <= self.v2.evaluate()
+        elif (self.op == '<>'):
+            return self.v1.evaluate() != self.v2.evaluate()
+        elif (self.op == '<'):
+            return self.v1.evaluate() < self.v2.evaluate()  
+        elif (self.op == '>'):
+            return self.v1.evaluate() > self.v2.evaluate()       
+        
     def numberRules(self, op, v1, v2):
         if op == '/' and v2.evaluate() == 0:
             printerror()
@@ -67,31 +82,41 @@ class BopNode(Node):
             printerror()
 
     def StringRules(self, op, v1, v2):
-        if not op in ['+']:
+        if not op in ['+','==','>=', '<=', '<>', '<', '>']:
             printerror()
 
 def printerror():
     print("SEMANTIC ERROR")
     lexer.lexpos = len(lexer.lexdata)
     raise SyntaxError
-    
+
 
 tokens = (
     'LPAREN', 'RPAREN',
     'NUMBER',
-    'PLUS','MINUS','TIMES','DIVIDE','REMAINDER','QDIVIDE',
+    'PLUS','MINUS','TIMES','DIVIDE','REMAINDER','QDIVIDE','EXPONENT',
+    'EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT',
     'STRING'
     )
 
 # Tokens
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
+
 t_PLUS    = r'\+'
 t_MINUS   = r'-'
+t_EXPONENT   = r'\*\*'
 t_TIMES   = r'\*'
 t_DIVIDE  = r'/'
 t_REMAINDER = 'mod'
 t_QDIVIDE = 'div'
+
+t_EQ = r'=='
+t_GEQ = r'>='
+t_LEQ = r'<='
+t_NEQ = r'<>'
+t_LT = r'<'
+t_GT = r'>'
 
 def t_STRING(t):
     r'\"([^\\\n]|(\\.))*?\"'
@@ -139,7 +164,14 @@ def p_expression_binop(t):
                   | expression TIMES expression
                   | expression DIVIDE expression
                   | expression REMAINDER expression
-                  | expression QDIVIDE expression'''
+                  | expression QDIVIDE expression
+                  | expression EXPONENT expression
+                  | expression EQ expression
+                  | expression GEQ expression
+                  | expression LEQ expression
+                  | expression NEQ expression
+                  | expression LT expression
+                  | expression GT expression'''
         
     t[0] = BopNode(t[2], t[1], t[3])
     
@@ -170,13 +202,13 @@ def p_error(t):
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-# import fileinput
-# for line in fileinput.input():
-#     yacc.parse(line)
+import fileinput
+for line in fileinput.input():
+    yacc.parse(line)
 
-while 1:
-    try:
-        s = input('input > ')   # Use raw_input on Python 2
-    except EOFError:
-        break
-    yacc.parse(s)
+# while 1:
+#     try:
+#         s = input('input > ')   # Use raw_input on Python 2
+#     except EOFError:
+#         break
+#     yacc.parse(s)
