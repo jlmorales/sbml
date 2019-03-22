@@ -8,6 +8,16 @@ class Node:
     def execute(self):
         return 0
 
+class BoolNode(Node):
+    def __init__(self, v):
+        if(v == 'true'):
+            self.value = True
+        else:
+            self.value = False
+
+    def evaluate(self):
+        return self.value
+
 class NumberNode(Node):
     def __init__(self, v):
         if('.' in v):
@@ -133,7 +143,9 @@ reserved = {
     'andalso' : 'AND',
     'orelse' : 'OR',
     'not' : 'NOT',
-    'in' : 'IN'
+    'in' : 'IN',
+    'true' : 'TRUE',
+    'false' : 'FALSE',
 }
 
 tokens = [
@@ -166,6 +178,9 @@ def t_ID(t):
      t.type = reserved.get(t.value,'ID')    # Check for reserved words
      if(t.type == 'ID'):
          t.lexer.skip(1)
+     elif(t.value in ['true', 'false']):
+        t.value = BoolNode(t.value)
+        return t
      else:
          return t
 
@@ -258,6 +273,15 @@ def p_expression_factor(t):
     '''expression : factor'''
     t[0] = t[1]
 
+def p_expression_true_false(t):
+    '''bool : TRUE
+            | FALSE'''
+    t[0] = t[1]
+
+def p_expression_bool(t):
+    '''expression : bool'''
+    t[0] = t[1]
+
 def p_error(t):
     print("SYNTAX ERROR")
     lexer.lexpos = len(lexer.lexdata)
@@ -266,13 +290,13 @@ def p_error(t):
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-import fileinput
-for line in fileinput.input():
-    yacc.parse(line)
+# import fileinput
+# for line in fileinput.input():
+#     yacc.parse(line)
 
-# while 1:
-#     try:
-#         s = input('input > ')   # Use raw_input on Python 2
-#     except EOFError:
-#         break
-#     yacc.parse(s)
+while 1:
+    try:
+        s = input('input > ')   # Use raw_input on Python 2
+    except EOFError:
+        break
+    yacc.parse(s)
