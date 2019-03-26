@@ -30,6 +30,21 @@ class NumberNode(Node):
 
 class StringNode(Node):
     def __init__(self, v):
+        self.value = v[1:len(v) - 1]
+
+    def evaluate(self):
+        return self.value
+
+        
+class ListNode(Node):
+    def __init__(self, v):
+        self.value = v
+
+    def evaluate(self):
+        return self.value
+
+class TupleNode(Node):
+    def __init__(self, v):
         self.value = v
 
     def evaluate(self):
@@ -71,6 +86,14 @@ class BopNode(Node):
         elif(type(v1.evaluate()) is bool and type (v2.evaluate()) is bool):
             self.boolRules(op,v1,v2)
             self.v1, self.v2, self.op = v1, v2, op
+        elif(type(v1.evaluate()) is list and type (v2.evaluate()) is list and op == '+'):
+            self.v1, self.v2, self.op = v1, v2, op
+        elif(type(v1.evaluate()) in [float, int, str, bool] and type (v2.evaluate()) is list and op == 'in'):
+            self.v1,self.v2,self.op = v1, v2, op
+        elif(type(v1.evaluate()) in [float, int, str, bool] and type (v2.evaluate()) is list and op == '::'):
+            self.v1,self.v2,self.op = v1, v2, op
+        elif(type(v1.evaluate()) is int and type (v2.evaluate()) is tuple and op == '#'):
+            self.v1,self.v2,self.op = v1, v2, op
         else:
             printerror()
 
@@ -78,8 +101,8 @@ class BopNode(Node):
         if (self.op == '+'):
             if(type(self.v1.evaluate()) is str):
                 v1 , v2 = self.v1.evaluate(), self.v2.evaluate()
-                v1 , v2 = v1[1:len(v1) - 1], v2[1:len(v2) - 1]
-                return '"' + v1 + v2 + '"'
+                # v1 , v2 = v1[1:len(v1) - 1], v2[1:len(v2) - 1]
+                return v1 + v2
             return self.v1.evaluate() + self.v2.evaluate()
         elif (self.op == '-'):
             return self.v1.evaluate() - self.v2.evaluate()
@@ -110,10 +133,23 @@ class BopNode(Node):
         elif (self.op == 'orelse'):
             return self.v1.evaluate() or self.v2.evaluate()    
         elif (self.op == 'in'):
-            v1 , v2 = self.v1.evaluate(), self.v2.evaluate()
-            v1 , v2 = v1[1:len(v1) - 1], v2[1:len(v2) - 1]
-            return v1 in v2            
-        
+            if(type(self.v1.evaluate()) is str and type(self.v2.evaluate()) is str): 
+                v1 , v2 = self.v1.evaluate(), self.v2.evaluate()
+                # v1 , v2 = v1[1:len(v1) - 1], v2[1:len(v2) - 1]
+                return v1 in v2            
+            return self.v1.evaluate() in self.v2.evaluate()
+        elif(self.op == '::'):
+            return [self.v1.evaluate()] + self.v2.evaluate()
+        elif(self.op == '#'):
+            v1 = self.v1.evaluate()
+            v2 = self.v2.evaluate()
+            v1 -= 1
+            if(v1 < 0 or v1 >= len(v2)):
+                printerror()
+            else:
+                return v2[v1] 
+
+
     def numberRules(self, op, v1, v2):
         if op not in ['+', '-', '*', '**', 'div','mod', '==','>=', '<=', '<>', '<', '>']:
             printerror()
@@ -130,6 +166,10 @@ class BopNode(Node):
 
     def boolRules(self, op, v1, v2):
         if not op in ['andalso', 'orelse']:
+            printerror()
+    
+    def listRules(self, op, v1, v2):
+        if not op in ['+', 'in']:
             printerror()
 
 def printerror():
@@ -150,6 +190,9 @@ reserved = {
 
 tokens = [
     'LPAREN', 'RPAREN',
+    'LBRACK', 'RBRACK',
+    'COMMA',
+    'CONS', 'TINDEX',
     'NUMBER',
     'PLUS','MINUS','TIMES','DIVIDE','EXPONENT',
     'EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT',
@@ -159,6 +202,14 @@ tokens = [
 # Tokens
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
+
+t_LBRACK  = r'\['
+t_RBRACK  = r'\]'
+
+t_CONS = r'::'
+t_TINDEX = r'\#'
+
+t_COMMA  = r','
 
 t_PLUS    = r'\+'
 t_MINUS   = r'-'
@@ -219,16 +270,18 @@ precedence = (
     ('left','AND'),
     ('left','NOT'),
     ('left','EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT' ),
+    ('left', 'CONS'),
     ('left','IN'),
     ('left','PLUS','MINUS'),
     ('left','TIMES','DIVIDE',"REMAINDER", 'QDIVIDE'),
     ('left','EXPONENT'),
+    ('left','TINDEX'),
     ('nonassoc','UMINUS'),
     )
 
 def p_statement_expr(t):
     'statement : expression'
-    print(t[1].evaluate())
+    t[0] = t[1]
 
 def p_expression_binop(t):
     '''expression : expression PLUS expression
@@ -246,7 +299,8 @@ def p_expression_binop(t):
                   | expression GT expression
                   | expression AND expression
                   | expression OR expression
-                  | expression IN expression'''
+                  | expression IN expression
+                  | expression CONS expression'''
         
     t[0] = BopNode(t[2], t[1], t[3])
 def p_expression_sinop(t):
@@ -273,6 +327,8 @@ def p_expression_factor(t):
     '''expression : factor'''
     t[0] = t[1]
 
+#boolean
+
 def p_expression_true_false(t):
     '''bool : TRUE
             | FALSE'''
@@ -281,6 +337,39 @@ def p_expression_true_false(t):
 def p_expression_bool(t):
     '''expression : bool'''
     t[0] = t[1]
+
+#LISTS
+def p_expression_list(t):
+    '''expression : LBRACK expression_list RBRACK'''
+    t[0] = ListNode(t[2])
+
+def p_expression_list_empty(t):
+    '''expression : LBRACK  RBRACK'''
+    t[0] = ListNode([])
+
+#tuples
+def p_expression_tuple(t):
+    '''expression : LPAREN expression_list COMMA expression RPAREN'''
+    temp = t[2] + [t[4].evaluate()]
+    temp = tuple(temp)
+    t[0] = TupleNode(temp)
+
+def p_expression_tuple_empty(t):
+    '''expression : LPAREN RPAREN'''
+    t[0] = TupleNode(tuple())
+
+def p_expression_tuple_index(t):
+    '''expression : TINDEX expression LPAREN expression RPAREN'''
+    t[0] = BopNode(t[1], t[2], t[4])
+
+#expression list
+def p_expression_list_1(t):
+    '''expression_list : expression '''
+    t[0] = [t[1].evaluate()]
+
+def p_expression_list_2(t):
+    '''expression_list : expression_list COMMA expression '''
+    t[0] = t[1] + [t[3].evaluate()]
 
 def p_error(t):
     print("SYNTAX ERROR")
@@ -294,9 +383,30 @@ parser = yacc.yacc()
 # for line in fileinput.input():
 #     yacc.parse(line)
 
+# while 1:
+#     t = 1
+#     try:
+#         s = input('input > ')   # Use raw_input on Python 2
+#         ast = yacc.parse(s)
+#     except:
+#         print('Syntax error')
+#         t = 0
+
+#     if(t==1):
+#         try:
+#             out = ast.evaluate()
+#             if type(out) is str:
+#                 print("'" + str(out) + "'")
+#             else:
+#                 print(out)
+#         except:
+#             print('Semantic error')
 while 1:
     try:
         s = input('input > ')   # Use raw_input on Python 2
     except EOFError:
         break
-    yacc.parse(s)
+    c = yacc.parse(s)
+    print(c.evaluate())
+
+
