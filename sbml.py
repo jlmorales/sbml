@@ -271,10 +271,11 @@ def t_newline(t):
 
 # Ignored characters
 t_ignore = " \t"
+# t_ignore = "\n[ ]*\n"
 
 def t_error(t):
     print(t)
-    #t.lexer.skip(1)
+    # t.lexer.skip(1)
     raise Exception
 
 # Build the lexer
@@ -292,9 +293,8 @@ precedence = (
     ('left','PLUS','MINUS'),
     ('left','TIMES','DIVIDE',"REMAINDER", 'QDIVIDE'),
     ('right','EXPONENT'),
-    ('left','LINDEX'),
-    ('left','TINDEX'),
-    ('left','LIST'),
+    ('left','LBRACK'),
+    ('left','LPAREN'),
     ('nonassoc','UMINUS'),
     )
 
@@ -312,14 +312,14 @@ def p_expression_group(t):
 
 #LISTS
 def p_expression_list(t):
-    '''expression : LBRACK expression_list RBRACK %prec LIST'''
+    '''expression : LBRACK expression_list RBRACK'''
     t[0] = ListNode(t[2])
 def p_expression_list_empty(t):
     '''expression : LBRACK  RBRACK'''
     t[0] = ListNode([])
 
 def p_expression_list_index(t):
-    '''expression : expression LBRACK expression RBRACK %prec LINDEX'''
+    '''expression : expression LBRACK expression RBRACK'''
     t[0] = BopNode('index', t[1], t[3])
 
 #tuples
@@ -421,6 +421,7 @@ parser = yacc.yacc()
 # for line in fileinput.input():
 #     t = 1
 #     try:
+#         line = line.strip()
 #         ast = yacc.parse(line)
 #     except Exception:
 #         print('SYNTAX ERROR')
@@ -435,15 +436,65 @@ parser = yacc.yacc()
 #         except Exception:
 #             print('SEMANTIC ERROR')
 
-while 1:
+# while 1:
+#     t = 1
+#     try:
+#         s = input('input > ')   # Use raw_input on Python 2
+#         ast = yacc.parse(s)
+#     except Exception:
+#         print('SYNTAX ERROR')
+#         t = 0
+
+#     if(t==1):
+#         try:
+#             out = ast.evaluate()
+#             if type(out) is str:
+#                 print("'" + str(out) + "'")
+#             else:
+#                 print(out)
+#         except Exception:
+#             print('SEMANTIC ERROR')
+
+# import sys
+
+# if (len(sys.argv) != 2):
+#     sys.exit("invalid arguments")
+# fd = open(sys.argv[1], 'r')
+# code = ""
+
+# for line in fd:
+#     code += line.strip()
+
+# try:
+#     lex.input(code)
+#     while True:
+#         token = lex.token()
+#         if not token: break
+#         print(token)
+#     ast = yacc.parse(code)
+#     ast.execute()
+# except Exception:
+#     print("ERROR")
+
+import sys
+
+if (len(sys.argv) != 2):
+    sys.exit("invalid arguments")
+fd = open(sys.argv[1], 'r')
+code = ""
+
+with open(sys.argv[1], 'r') as f_in:
+    lines = [line.rstrip() for line in f_in] # All lines including the blank ones
+    lines = [line for line in lines if line] # Non-blank lines
+
+for line in lines:
     t = 1
     try:
-        s = input('input > ')   # Use raw_input on Python 2
-        ast = yacc.parse(s)
+        line = line.strip()
+        ast = yacc.parse(line)
     except Exception:
         print('SYNTAX ERROR')
         t = 0
-
     if(t==1):
         try:
             out = ast.evaluate()
@@ -453,4 +504,3 @@ while 1:
                 print(out)
         except Exception:
             print('SEMANTIC ERROR')
-
