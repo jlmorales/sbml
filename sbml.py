@@ -55,14 +55,22 @@ class SopNode(Node):
        
     def evaluate(self):
         self.semanticCheck(self.op, self.v)
-        return not self.v.evaluate()
+        if( self.op == 'not'):
+            return not self.v.evaluate()
+        elif(self.op == '-'):
+            return -self.v.evaluate()
+        elif(self.op == '+'):
+            return self.v.evaluate()
     def boolRules(self, op, v):
         if op not in ['not']:
             printerror()
     def semanticCheck(self, op, v):
-        if(type(v.evaluate() is bool)):
+        if(type(v.evaluate()) is bool):
             if op not in ['not']:
                 printerror()
+        elif(type(v.evaluate()) in [int, float]):
+            if op not in ['-', '+']:
+                printerror
         else:
             printerror()
 
@@ -303,8 +311,10 @@ def p_statement_expr(t):
     t[0] = t[1]
 
 def p_expression_uminus(t):
-    'factor : MINUS factor %prec UMINUS'
-    t[0] = NumberNode(str(-t[2].evaluate()))
+    '''expression : MINUS expression %prec UMINUS
+                  | PLUS expression %prec UMINUS'''
+    # t[0] = NumberNode(str(-t[2].evaluate()))
+    t[0] = SopNode(t[1],t[2])
 
 def p_expression_group(t):
     'expression : LPAREN expression RPAREN'
@@ -334,8 +344,8 @@ def p_expression_tuple_empty(t):
     t[0] = TupleNode([])
 
 def p_expression_tuple_index(t):
-    '''expression : TINDEX expression LPAREN expression RPAREN'''
-    t[0] = BopNode(t[1], t[2], t[4])
+    '''expression : TINDEX expression expression'''
+    t[0] = BopNode(t[1], t[2], t[3])
 
 #expression list
 def p_expression_list_1(t):
@@ -413,28 +423,6 @@ def p_error(t):
 import ply.yacc as yacc
 parser = yacc.yacc()
 
-# import fileinput
-# for line in fileinput.input():
-#     yacc.parse(line)
-
-# import fileinput
-# for line in fileinput.input():
-#     t = 1
-#     try:
-#         line = line.strip()
-#         ast = yacc.parse(line)
-#     except Exception:
-#         print('SYNTAX ERROR')
-#         t = 0
-#     if(t==1):
-#         try:
-#             out = ast.evaluate()
-#             if type(out) is str:
-#                 print("'" + str(out) + "'")
-#             else:
-#                 print(out)
-#         except Exception:
-#             print('SEMANTIC ERROR')
 
 # while 1:
 #     t = 1
@@ -455,26 +443,7 @@ parser = yacc.yacc()
 #         except Exception:
 #             print('SEMANTIC ERROR')
 
-# import sys
 
-# if (len(sys.argv) != 2):
-#     sys.exit("invalid arguments")
-# fd = open(sys.argv[1], 'r')
-# code = ""
-
-# for line in fd:
-#     code += line.strip()
-
-# try:
-#     lex.input(code)
-#     while True:
-#         token = lex.token()
-#         if not token: break
-#         print(token)
-#     ast = yacc.parse(code)
-#     ast.execute()
-# except Exception:
-#     print("ERROR")
 
 import sys
 
@@ -504,3 +473,5 @@ for line in lines:
                 print(out)
         except Exception:
             print('SEMANTIC ERROR')
+
+
