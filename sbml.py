@@ -54,21 +54,22 @@ class SopNode(Node):
         self.v, self.op = v , op
        
     def evaluate(self):
-        self.semanticCheck(self.op, self.v)
+        v = self.v.evaluate()
+        self.semanticCheck(self.op, v)
         if( self.op == 'not'):
-            return not self.v.evaluate()
+            return not v
         elif(self.op == '-'):
-            return -self.v.evaluate()
+            return -v
         elif(self.op == '+'):
-            return self.v.evaluate()
+            return v
     def boolRules(self, op, v):
         if op not in ['not']:
             printerror()
     def semanticCheck(self, op, v):
-        if(type(v.evaluate()) is bool):
+        if(type(v) is bool):
             if op not in ['not']:
                 printerror()
-        elif(type(v.evaluate()) in [int, float]):
+        elif(type(v) in [int, float]):
             if op not in ['-', '+']:
                 printerror
         else:
@@ -82,52 +83,50 @@ class BopNode(Node):
 
     def evaluate(self):
         #type check
-        self.typeCheck(self.op,self.v1,self.v2)
+        v1 = self.v1.evaluate()
+        v2 = self.v2.evaluate()
+        self.typeCheck(self.op,v1,v2)
         if (self.op == '+'):
-            return self.v1.evaluate() + self.v2.evaluate()
+            return v1 + v2
         elif (self.op == '-'):
-            return self.v1.evaluate() - self.v2.evaluate()
+            return v1 - v2
         elif (self.op == '*'):
-            return self.v1.evaluate() * self.v2.evaluate()
+            return v1 * v2
         elif (self.op == '/'):
-            return self.v1.evaluate() / self.v2.evaluate()
+            return v1 / v2
         elif (self.op == 'mod'):
-            return self.v1.evaluate() % self.v2.evaluate()
+            return v1 % v2
         elif (self.op == 'div'):
-            return self.v1.evaluate() // self.v2.evaluate()    
+            return v1 // v2 
         elif (self.op == '**'):
-            return self.v1.evaluate() ** self.v2.evaluate()  
+            return v1 ** v2
         elif (self.op == '=='):
-            return self.v1.evaluate() == self.v2.evaluate()  
+            return v1 == v2
         elif (self.op == '>='):
-            return self.v1.evaluate() >= self.v2.evaluate()  
+            return v1 >= v2 
         elif (self.op == '<='):
-            return self.v1.evaluate() <= self.v2.evaluate()
+            return v1 <= v2
         elif (self.op == '<>'):
-            return self.v1.evaluate() != self.v2.evaluate()
+            return v1 != v2
         elif (self.op == '<'):
-            return self.v1.evaluate() < self.v2.evaluate()  
+            return v1 < v2
         elif (self.op == '>'):
-            return self.v1.evaluate() > self.v2.evaluate()           
+            return v1 > v2         
         elif (self.op == 'andalso'):
-            return self.v1.evaluate() and self.v2.evaluate()
+            return v1 and v2
         elif (self.op == 'orelse'):
-            return self.v1.evaluate() or self.v2.evaluate()    
+            return v1 or v2   
         elif (self.op == 'in'):
-            return self.v1.evaluate() in self.v2.evaluate()
+            return v1 in v2
         elif(self.op == '::'):
-            return [self.v1.evaluate()] + self.v2.evaluate()
+            return [v1] + v2
         elif(self.op == '#'):
-            v1 = self.v1.evaluate()
-            v2 = self.v2.evaluate()
             v1 -= 1
             if(v1 < 0 or v1 >= len(v2)):
                 printerror()
             else:
                 return v2[v1] 
         elif(self.op == 'index'):
-            v1 = self.v1.evaluate()
-            v2 = self.v2.evaluate()
             if(v2 < 0 ):
                 printerror()
             else:
@@ -135,13 +134,13 @@ class BopNode(Node):
             
 
     def numberRules(self, op, v1, v2):
-        if op not in ['+', '-', '*', '**', 'div','mod', '==','>=', '<=', '<>', '<', '>']:
+        if op not in ['+', '-','/', '*', '**', 'div','mod', '==','>=', '<=', '<>', '<', '>']:
             printerror()
-        if op == '/' and v2.evaluate() == 0:
+        if op == '/' and v2 == 0:
             printerror()
-        if op == 'mod' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
+        if op == 'mod' and (type(v1) is float or type(v2) is float):
             printerror()
-        if op == 'div' and (type(v1.evaluate()) is float or type(v2.evaluate()) is float):
+        if op == 'div' and (type(v1) is float or type(v2) is float):
             printerror()
 
     def StringRules(self, op, v1, v2):
@@ -153,28 +152,28 @@ class BopNode(Node):
             printerror()
     
     def listRules(self, op, v1, v2):
-        if not op in ['+']:
+        if not op in ['+','::']:
             printerror()
     
     def typeCheck(self, op, v1, v2):
-        if(type(v1.evaluate()) in [float, int] and type(v2.evaluate()) in [float, int]):
+        if(type(v1) in [float, int] and type(v2) in [float, int]):
             self.numberRules(op,v1,v2)
-        elif(type(v1.evaluate()) is str and type (v2.evaluate()) is str):
+        elif(type(v1) is str and type (v2) is str):
             self.StringRules(op,v1,v2)
-        elif(type(v1.evaluate()) is bool and type (v2.evaluate()) is bool):
+        elif(type(v1) is bool and type (v2) is bool):
             self.boolRules(op,v1,v2)
-        elif(type(v1.evaluate()) is list and type (v2.evaluate()) is list):
+        elif(type(v1) is list and type (v2) is list):
             self.listRules(op,v1,v2)
-        elif(type(v1.evaluate()) is list and type(v2.evaluate()) is int):
+        elif(type(v1) is list and type(v2) is int):
             if not op in ['index']:
                 printerror()
-        elif(type(v1.evaluate()) is str and type(v2.evaluate()) is int):
+        elif(type(v1) is str and type(v2) is int):
             if not op in ['index']:
                 printerror()
-        elif(type(v1.evaluate()) in [float, int, str, bool] and type (v2.evaluate()) is list):
+        elif(type(v1) in [float, int, str, bool] and type (v2) is list):
             if not op in ['::', 'in']:
                 printerror()
-        elif(type(v1.evaluate()) is int and type (v2.evaluate()) is tuple and op == '#'):
+        elif(type(v1) is int and type (v2) is tuple and op == '#'):
             if not op in ['#']:
                 printerror()
         else:
