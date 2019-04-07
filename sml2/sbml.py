@@ -302,7 +302,7 @@ precedence = (
     ('right','EXPONENT'),
     ('left','LBRACK'),
     ('left','LPAREN'),
-    ('nonassoc','UMINUS'),
+    ('nonassoc','UMINUS', 'UPLUS'),
     )
 
 def p_statement_expr(t):
@@ -310,9 +310,12 @@ def p_statement_expr(t):
     t[0] = t[1]
 
 def p_expression_uminus(t):
-    '''expression : MINUS expression %prec UMINUS
-                  | PLUS expression %prec UMINUS'''
+    '''expression : MINUS expression %prec UMINUS'''
     # t[0] = NumberNode(str(-t[2].evaluate()))
+    t[0] = SopNode(t[1],t[2])
+
+def p_expression_uplus(t):
+    '''expression : PLUS expression %prec UPLUS'''
     t[0] = SopNode(t[1],t[2])
 
 def p_expression_group(t):
