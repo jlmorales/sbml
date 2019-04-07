@@ -49,6 +49,16 @@ class TupleNode(Node):
     def evaluate(self):
         return tuple([n.evaluate() for n in self.value])
 
+class VarNode(Node):
+    def __init__(self, variable):
+        self.variable = variable
+    
+    def evaluate(self):
+        if self.variable in variableList:
+            return variableList[self.variable]
+        else:
+            printerror()
+
 class SopNode(Node):
     def __init__(self, op, v):
         self.v, self.op = v , op
@@ -179,12 +189,43 @@ class BopNode(Node):
         else:
             printerror()
 
+class StatementNode(Node):
+    def __init__(self, statement):
+        self.statement = statement
+        
+    def execute(self):
+        self.statement.evaluate()
+
+class PrintStatementNode(Node):
+    def __init__(self, statement):
+        self.statement = statement
+
+    def execute(self):
+        print(self.statement.evaluate())
+
+class AssignmentStatement(Node):
+    def __init__(self, variable, value):
+        self.variable = variable
+        self.value = value
+    
+    def execute(self):
+        variableList[self.variable] = self.value.evaluate()
+
+class BlockNode(Node):
+    def __init__(self,statements):
+        self.statements = statements
+
+    def execute(self):
+        for statement in self.statements:
+            statement.execute()
+
 def printerror():
     # print("SEMANTIC ERROR")
     # lexer.lexpos = len(lexer.lexdata)
     raise SyntaxError
 
 reserved = {
+    'print' : 'PRINT',
     'div' : 'QDIVIDE',
     'mod' : 'REMAINDER',
     'andalso' : 'AND',
@@ -198,13 +239,15 @@ reserved = {
 tokens = [
     'LPAREN', 'RPAREN',
     'LBRACK', 'RBRACK',
+    'LBRACE', 'RBRACE',
     'COMMA',
     'SEMICOLON',
     'CONS', 'TINDEX',
     'NUMBER',
     'PLUS','MINUS','TIMES','DIVIDE','EXPONENT',
     'EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT',
-    'STRING', 'STRING_2'
+    'STRING', 'STRING_2', 'VARIABLE',
+    'EQUALS'
 ] + list(reserved.values())
 
 # Tokens
@@ -213,6 +256,10 @@ t_RPAREN  = r'\)'
 
 t_LBRACK  = r'\['
 t_RBRACK  = r'\]'
+
+t_LBRACE = r'\{'
+t_RBRACE = r'\}'
+
 t_SEMICOLON  = r';'
 
 t_CONS = r'::'
@@ -232,24 +279,16 @@ t_LEQ = r'<='
 t_NEQ = r'<>'
 t_LT = r'<'
 t_GT = r'>'
+t_EQUALS = r'='
 
-def t_ID(t):
+def t_VARIABLE(t):
      r'[a-zA-Z_][a-zA-Z_0-9]*'
-     t.type = reserved.get(t.value,'ID')    # Check for reserved words
-     if(t.type == 'ID'):
-         t.lexer.skip(1)
+     t.type = reserved.get(t.value,'VARIABLE')
+     if(t.type == 'VARIABLE'):
+         return t
      elif(t.value in ['true', 'false']):
         t.value = BoolNode(t.value)
         return t
-    #  elif(t.value in ['orelse']):
-    #     t.value = 'OR'
-    #     return t
-    #  elif(t.value in ['andalso']):
-    #     t.value = 'AND'
-    #     return t
-    #  elif(t.value in ['not']):
-    #     t.value = 'NOT'
-    #     return t
      else:
          return t
 
@@ -289,6 +328,8 @@ def t_error(t):
 import ply.lex as lex
 lexer = lex.lex()
 
+variableList = {}
+
 # Parsing rules
 precedence = (
     ('left','OR'),
@@ -305,9 +346,33 @@ precedence = (
     ('nonassoc','UMINUS', 'UPLUS'),
     )
 
+def p_program(t):
+    '''program : block'''
+    t[0] = t[1]
+
+def p_block(t):
+    '''block : LBRACE statement_list RBRACE'''
+    t[0] = BlockNode(t[2])
+
+def p_statement_list_1(t):
+    '''statement_list : statement_list statement'''
+    t[0] = t[1] + [t[2]]
+
+def p_statment_list_2(t):
+    '''statement_list : statement'''
+    t[0] = [t[1]]
+
 def p_statement_expr(t):
     'statement : expression SEMICOLON'
-    t[0] = t[1]
+    t[0] = StatementNode(t[1])
+
+def p_statement_assign(t):
+    'statement : VARIABLE EQUALS expression SEMICOLON'
+    t[0] = AssignmentStatement(t[1], t[3])
+
+def p_statement_print(t):
+    'statement : PRINT LPAREN expression RPAREN SEMICOLON'
+    t[0] = PrintStatementNode(t[3])
 
 def p_expression_uminus(t):
     '''expression : MINUS expression %prec UMINUS'''
@@ -358,6 +423,7 @@ def p_expression_list_2(t):
     '''expression_list : expression_list COMMA expression '''
     t[0] = t[1] + [t[3]]
 
+#binary operations
 def p_expression_binop(t):
     '''expression : expression PLUS expression
                   | expression MINUS expression
@@ -392,6 +458,10 @@ def p_expression_binop_bool(t):
 def p_factor_number(t):
     'factor : NUMBER'
     t[0] = t[1]
+
+def p_expression_var(t):
+    '''expression : VARIABLE'''
+    t[0] = VarNode(t[1])
 
 def p_factor_string(t):
     'expression : STRING'
@@ -447,6 +517,35 @@ parser = yacc.yacc()
 
 
 
+# import sys
+
+# if (len(sys.argv) != 2):
+#     sys.exit("invalid arguments")
+# fd = open(sys.argv[1], 'r')
+# code = ""
+
+# with open(sys.argv[1], 'r') as f_in:
+#     lines = [line.rstrip() for line in f_in] # All lines including the blank ones
+#     lines = [line for line in lines if line] # Non-blank lines
+
+# for line in lines:
+#     t = 1
+#     try:
+#         line = line.strip()
+#         ast = yacc.parse(line)
+#     except Exception:
+#         print('SYNTAX ERROR')
+#         t = 0
+#     if(t==1):
+#         try:
+#             out = ast.evaluate()
+#             if type(out) is str:
+#                 print("'" + str(out) + "'")
+#             else:
+#                 print(out)
+#         except Exception:
+#             print('SEMANTIC ERROR')
+
 import sys
 
 if (len(sys.argv) != 2):
@@ -454,26 +553,16 @@ if (len(sys.argv) != 2):
 fd = open(sys.argv[1], 'r')
 code = ""
 
-with open(sys.argv[1], 'r') as f_in:
-    lines = [line.rstrip() for line in f_in] # All lines including the blank ones
-    lines = [line for line in lines if line] # Non-blank lines
+for line in fd:
+    code += line.strip()
 
-for line in lines:
-    t = 1
-    try:
-        line = line.strip()
-        ast = yacc.parse(line)
-    except Exception:
-        print('SYNTAX ERROR')
-        t = 0
-    if(t==1):
-        try:
-            out = ast.evaluate()
-            if type(out) is str:
-                print("'" + str(out) + "'")
-            else:
-                print(out)
-        except Exception:
-            print('SEMANTIC ERROR')
-
-
+try:
+    # lex.input(code)
+    # while True:
+    #     token = lex.token()
+    #     if not token: break
+    #     print(token)
+    ast = yacc.parse(code)
+    ast.execute()
+except Exception:
+    print("ERROR")
