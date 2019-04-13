@@ -354,6 +354,10 @@ def p_block(t):
     '''block : LBRACE statement_list RBRACE'''
     t[0] = BlockNode(t[2])
 
+def p_block_empty(t):
+    '''block : LBRACE RBRACE'''
+    t[0] = BlockNode([])
+
 def p_statement_list_1(t):
     '''statement_list : statement_list statement'''
     t[0] = t[1] + [t[2]]
@@ -373,6 +377,10 @@ def p_statement_assign(t):
 def p_statement_print(t):
     'statement : PRINT LPAREN expression RPAREN SEMICOLON'
     t[0] = PrintStatementNode(t[3])
+
+def p_statement_block(t):
+    'statement : block'
+    t[0] = t[1]
 
 def p_expression_uminus(t):
     '''expression : MINUS expression %prec UMINUS'''
