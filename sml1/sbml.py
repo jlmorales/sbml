@@ -1,3 +1,4 @@
+#Jose Morales 109306481
 class Node:
     def __init__(self):
         print("init node")
@@ -201,7 +202,7 @@ tokens = [
     'COMMA',
     'SEMICOLON',
     'CONS', 'TINDEX',
-    'NUMBER',
+    'NUMBER', 'NUMBER_2',
     'PLUS','MINUS','TIMES','DIVIDE','EXPONENT',
     'EQ', 'GEQ', 'LEQ', 'NEQ', 'LT', 'GT',
     'STRING', 'STRING_2'
@@ -263,14 +264,25 @@ def t_STRING_2(t):
     t.value = StringNode(t.value)
     return t
 
-def t_NUMBER(t):
-    r'-?\d*(\d\.|\.\d)\d* | \d+'
+def t_NUMBER_2(t):
+    r'(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?'
     try:
         t.value = NumberNode(t.value)
     except ValueError:
-        print("Integer value too large %d", t.value)
+        # print("Integer value too large %d", t.value)
         t.value = 0
     return t
+
+def t_NUMBER(t):
+    r'\d+'
+    try:
+        t.value = NumberNode(t.value)
+    except ValueError:
+        # print("Integer value too large %d", t.value)
+        t.value = 0
+    return t
+
+
 
 def t_newline(t):
     r'\n+'
@@ -281,13 +293,13 @@ t_ignore = " \t"
 # t_ignore = "\n[ ]*\n"
 
 def t_error(t):
-    print(t)
+    # print(t)
     # t.lexer.skip(1)
     raise Exception
 
 # Build the lexer
 import ply.lex as lex
-lexer = lex.lex()
+lexer = lex.lex(debug=0)
 
 # Parsing rules
 precedence = (
@@ -390,6 +402,10 @@ def p_factor_number(t):
     'factor : NUMBER'
     t[0] = t[1]
 
+def p_factor_number2(t):
+    'factor : NUMBER_2'
+    t[0] = t[1]
+
 def p_factor_string(t):
     'expression : STRING'
     t[0] = t[1]
@@ -420,7 +436,7 @@ def p_error(t):
     raise Exception
 
 import ply.yacc as yacc
-parser = yacc.yacc()
+parser = yacc.yacc(debug=0)
 
 
 # while 1:
