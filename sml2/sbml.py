@@ -219,6 +219,36 @@ class BlockNode(Node):
         for statement in self.statements:
             statement.execute()
 
+class IfStatementNode(Node):
+    def __init__(self,expression,block):
+        self.expression = expression
+        self.block = block
+
+    def execute(self):
+        if self.expression.evaluate():
+            self.block.execute()
+
+class IfElseStatementNode(Node):
+    def __init__(self, expression, ifblock, elseblock):
+        self.expression = expression
+        self.ifblock = ifblock
+        self.elseblock = elseblock
+
+    def execute(self):
+        if self.expression.evaluate():
+            self.ifblock.execute()
+        else:
+            self.elseblock.execute()
+
+class WhileStatementNode(Node):
+    def __init__(self, expression, block):
+        self.expression = expression
+        self.block = block
+    
+    def execute(self):
+        while self.expression.evaluate():
+            self.block.execute()
+
 def printerror():
     # print("SEMANTIC ERROR")
     # lexer.lexpos = len(lexer.lexdata)
@@ -234,6 +264,9 @@ reserved = {
     'in' : 'IN',
     'true' : 'TRUE',
     'false' : 'FALSE',
+    'if' : 'IF',
+    'else' : 'ELSE',
+    'while' : 'WHILE',
 }
 
 tokens = [
@@ -357,6 +390,18 @@ def p_block(t):
 def p_block_empty(t):
     '''block : LBRACE RBRACE'''
     t[0] = BlockNode([])
+
+def p_if_statement(t):
+    '''statement : IF LPAREN expression RPAREN block'''
+    t[0] = IfStatementNode(t[3], t[5])
+
+def p_if_else_statement(t):
+    '''statement : IF LPAREN expression RPAREN block ELSE block'''
+    t[0] = IfElseStatementNode(t[3],t[5],t[7])
+
+def p_while_statement(t):
+    '''statement : WHILE LPAREN expression RPAREN block'''
+    t[0] = WhileStatementNode(t[3],t[5])
 
 def p_statement_list_1(t):
     '''statement_list : statement_list statement'''
