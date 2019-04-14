@@ -203,13 +203,22 @@ class PrintStatementNode(Node):
     def execute(self):
         print(self.statement.evaluate())
 
-class AssignmentStatement(Node):
+class AssignmentStatementNode(Node):
     def __init__(self, variable, value):
         self.variable = variable
         self.value = value
     
     def execute(self):
         variableList[self.variable] = self.value.evaluate()
+
+class IndexAssignmentStatementNode(Node):
+    def __init__(self, variable, expression, value):
+        self.variable = variable
+        self.expression = expression
+        self.value = value
+
+    def execute(self):
+        variableList[self.variable][self.expression.evaluate()] = self.value.evaluate()
 
 class BlockNode(Node):
     def __init__(self,statements):
@@ -272,7 +281,7 @@ reserved = {
 tokens = [
     'LPAREN', 'RPAREN',
     'LBRACK', 'RBRACK',
-    'LBRACE', 'RBRACE',
+    'LCURL', 'RCURL',
     'COMMA',
     'SEMICOLON',
     'CONS', 'TINDEX',
@@ -290,8 +299,8 @@ t_RPAREN  = r'\)'
 t_LBRACK  = r'\['
 t_RBRACK  = r'\]'
 
-t_LBRACE = r'\{'
-t_RBRACE = r'\}'
+t_LCURL = r'\{'
+t_RCURL = r'\}'
 
 t_SEMICOLON  = r';'
 
@@ -379,18 +388,21 @@ precedence = (
     ('nonassoc','UMINUS', 'UPLUS'),
     )
 
+#program definition
 def p_program(t):
     '''program : block'''
     t[0] = t[1]
 
+#block definition
 def p_block(t):
-    '''block : LBRACE statement_list RBRACE'''
+    '''block : LCURL statement_list RCURL'''
     t[0] = BlockNode(t[2])
 
 def p_block_empty(t):
-    '''block : LBRACE RBRACE'''
+    '''block : LCURL RCURL'''
     t[0] = BlockNode([])
 
+#if ifelse while definitions
 def p_if_statement(t):
     '''statement : IF LPAREN expression RPAREN block'''
     t[0] = IfStatementNode(t[3], t[5])
@@ -403,6 +415,7 @@ def p_while_statement(t):
     '''statement : WHILE LPAREN expression RPAREN block'''
     t[0] = WhileStatementNode(t[3],t[5])
 
+#statement list definition
 def p_statement_list_1(t):
     '''statement_list : statement_list statement'''
     t[0] = t[1] + [t[2]]
@@ -411,13 +424,18 @@ def p_statment_list_2(t):
     '''statement_list : statement'''
     t[0] = [t[1]]
 
+#statement definitions for assign and print and simple expression and block to statement
 def p_statement_expr(t):
     'statement : expression SEMICOLON'
     t[0] = StatementNode(t[1])
 
 def p_statement_assign(t):
     'statement : VARIABLE EQUALS expression SEMICOLON'
-    t[0] = AssignmentStatement(t[1], t[3])
+    t[0] = AssignmentStatementNode(t[1], t[3])
+
+def p_statement_index_assign(t):
+    '''statement : VARIABLE LBRACK expression RBRACK EQUALS expression SEMICOLON'''
+    t[0] = IndexAssignmentStatementNode(t[1], t[3], t[6])
 
 def p_statement_print(t):
     'statement : PRINT LPAREN expression RPAREN SEMICOLON'
@@ -427,6 +445,7 @@ def p_statement_block(t):
     'statement : block'
     t[0] = t[1]
 
+#unary definition
 def p_expression_uminus(t):
     '''expression : MINUS expression %prec UMINUS'''
     # t[0] = NumberNode(str(-t[2].evaluate()))
@@ -436,6 +455,7 @@ def p_expression_uplus(t):
     '''expression : PLUS expression %prec UPLUS'''
     t[0] = SopNode(t[1],t[2])
 
+#group definition
 def p_expression_group(t):
     'expression : LPAREN expression RPAREN'
     t[0] = t[2]
@@ -499,23 +519,28 @@ def p_expression_binop_list(t):
                   | expression CONS expression'''
     t[0] = BopNode(t[2], t[1], t[3])
 
+#not definition
 def p_expression_sinop(t):
     'expression : NOT expression %prec NOT'
     t[0] = SopNode(t[1], t[2])
 
+#orelse andalso definition
 def p_expression_binop_bool(t):
     '''expression : expression AND expression
                   | expression OR expression'''
     t[0] = BopNode(t[2], t[1], t[3])
 
+#number definition
 def p_factor_number(t):
     'factor : NUMBER'
     t[0] = t[1]
 
+#variable definition
 def p_expression_var(t):
     '''expression : VARIABLE'''
     t[0] = VarNode(t[1])
 
+#string definition
 def p_factor_string(t):
     'expression : STRING'
     t[0] = t[1]
@@ -610,11 +635,6 @@ for line in fd:
     code += line.strip()
 
 try:
-    # lex.input(code)
-    # while True:
-    #     token = lex.token()
-    #     if not token: break
-    #     print(token)
     ast = yacc.parse(code)
     ast.execute()
 except Exception:
