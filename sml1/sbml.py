@@ -355,7 +355,7 @@ def p_expression_tuple_empty(t):
     t[0] = TupleNode([])
 
 def p_expression_tuple_index(t):
-    '''expression : TINDEX expression expression'''
+    '''expression : TINDEX expression expression %prec LPAREN'''
     t[0] = BopNode(t[1], t[2], t[3])
 
 #expression list
@@ -462,8 +462,10 @@ parser = yacc.yacc(debug=0)
 
 import sys
 
+
 if (len(sys.argv) != 2):
     sys.exit("invalid arguments")
+print(sys.argv[1])
 fd = open(sys.argv[1], 'r')
 code = ""
 
