@@ -273,8 +273,8 @@ reserved = {
     'orelse' : 'OR',
     'not' : 'NOT',
     'in' : 'IN',
-    'true' : 'TRUE',
-    'false' : 'FALSE',
+    'True' : 'TRUE',
+    'False' : 'FALSE',
     'if' : 'IF',
     'else' : 'ELSE',
     'while' : 'WHILE',
@@ -330,7 +330,7 @@ def t_VARIABLE(t):
      t.type = reserved.get(t.value,'VARIABLE')
      if(t.type == 'VARIABLE'):
          return t
-     elif(t.value in ['true', 'false']):
+     elif(t.value in ['True', 'False']):
         t.value = BoolNode(t.value)
         return t
      else:
