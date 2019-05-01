@@ -279,10 +279,15 @@ class FunctionCall(Node):
         global variableList
         global dic_func
         func_node = dic_func[self.name]
-        for i in range(len(func_node.params)):
-            variableList[func_node.params[i]] = self.args[i].evaluate()
+        arg_list = []
+        for a in self.args:
+            arg_list.append(a.evaluate())
         old_variableList = variableList
-        variableList = old_variableList
+        variableList = {}
+        for i in range(len(func_node.params)):
+            variableList[func_node.params[i]] = arg_list[i]
+        # old_variableList = variableList
+        # variableList = old_variableList
         func_node.execute()
         result = func_node.output.evaluate()
         variableList = old_variableList
