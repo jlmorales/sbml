@@ -12,7 +12,7 @@ class Node:
 
 class BoolNode(Node):
     def __init__(self, v):
-        if(v == 'true'):
+        if(v == 'True'):
             self.value = True
         else:
             self.value = False
@@ -212,6 +212,7 @@ class AssignmentStatementNode(Node):
     
     def execute(self):
         variableList[self.variable] = self.value.evaluate()
+        return variableList
 
 class IndexAssignmentStatementNode(Node):
     def __init__(self, variable, expression, value):
@@ -260,6 +261,16 @@ class WhileStatementNode(Node):
         while self.expression.evaluate():
             self.block.execute()
 
+class ProgramNode(Node):
+    def __init__(self, functions, block):
+        self.functions = functions
+        self.block = block
+    
+    def execute(self):
+        for f in self.functions:
+            f.execute()
+        self.block.execute()
+
 class FunctionNode(Node):
     def __init__(self, name, params, block, output):
         self.name = name
@@ -268,7 +279,8 @@ class FunctionNode(Node):
         self.output = output
 
     def execute(self):
-        self.block.execute()
+        dic_func[self.name] = [self.params, self.block, self.output]
+        return dic_func
 
 class FunctionCall(Node):
     def __init__(self, name, args):
@@ -279,17 +291,22 @@ class FunctionCall(Node):
         global variableList
         global dic_func
         func_node = dic_func[self.name]
-        arg_list = []
-        for a in self.args:
-            arg_list.append(a.evaluate())
+        #arg_list = []
+        # for a in self.args:
+        #     arg_list.append(a.evaluate())
+        # print(self.name)
+        # print(arg_list)
         old_variableList = variableList
-        variableList = {}
-        for i in range(len(func_node.params)):
-            variableList[func_node.params[i]] = arg_list[i]
+        # variableList = {}
+        new_var = {}
+        for i in range(len(func_node[0])):
+            new_var[func_node[0][i]] = self.args[i].evaluate()
+            #new_var[func_node.param = arg_list[i]
         # old_variableList = variableList
         # variableList = old_variableList
-        func_node.execute()
-        result = func_node.output.evaluate()
+        variableList = new_var
+        func_node[1].execute()
+        result = func_node[2].evaluate()
         variableList = old_variableList
         return result
 
@@ -438,7 +455,8 @@ precedence = (
 #program definition
 def p_program(t):
     '''program : functions block'''
-    t[0] = t[2]
+    t[0] = ProgramNode(t[1], t[2])
+    # t[0] = t[2]
 
 #function definitons
 def p_functions(t):
@@ -452,7 +470,7 @@ def p_functions_2(t):
 def p_function(t):
     '''function : FUN VARIABLE LPAREN params RPAREN EQUALS block expression SEMICOLON'''
     t[0] =  FunctionNode(t[2], t[4], t[7], t[8])
-    dic_func[t[2]] = t[0]
+    #dic_func[t[2]] = t[0]
 
 #params definition
 def p_params(t):
@@ -728,14 +746,16 @@ for line in fd:
     code += line.strip()
 
 t = 1
-try:
-    ast = yacc.parse(code)
-except Exception:
-    print('SYNTAX ERROR')
-    t = 0
-if(t==1):
-    try:
-        out = ast.execute()
-    except Exception:
-        t=0
-        print('SEMANTIC ERROR')
+ast = yacc.parse(code)
+out = ast.execute()
+# try:
+#     ast = yacc.parse(code)
+# except Exception:
+#     print('SYNTAX ERROR')
+#     t = 0
+# if(t==1):
+#     try:
+#         out = ast.execute()
+#     except Exception:
+#         t=0
+#         print('SEMANTIC ERROR')
