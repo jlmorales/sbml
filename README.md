@@ -6,35 +6,35 @@
 
 #EXAMPLE 1:
 
-fun factorial(n) = {
-    if(n <1){
-        output = 1;
-    }else{
-        output = n * factorial(n - 1);
-    }
-} output;
+    fun factorial(n) = {
+        if(n <1){
+            output = 1;
+        }else{
+            output = n * factorial(n - 1);
+        }
+    } output;
 
-{
-    print(factorial(3));
-}
+    {
+        print(factorial(3));
+    }
 
 #EXAMPLE 2
 
-fun gcd(a,b) = {
-    t = b;
-    b = a mod b;
-    if(b == 0){
-        output = t;
-    } else {
-        output = gcd(t,b);
+    fun gcd(a,b) = {
+        t = b;
+        b = a mod b;
+        if(b == 0){
+            output = t;
+        } else {
+            output = gcd(t,b);
+        }
+    } output;
+
+    {
+
+        print(gcd(32,18));
+
     }
-} output;
-
-{
-
-    print(gcd(32,18));
-    
-}
 
 
 
