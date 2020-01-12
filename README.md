@@ -30,6 +30,13 @@ fun gcd(a,b) = {
     }
 } output;
 
+{
+
+    print(gcd(32,18));
+    
+}
+
+
 
 #You can run the program by opening the command line and running python sbml.py file.txt
 #where file is the file.txt is the file you are trying to run
