@@ -40,3 +40,4 @@ here are some examples of programs that you can run
 
 You can run the program by opening the command line and running python sbml.py file.txt
 where file is the file.txt is the file you are trying to run
+The version in sbml4 folder is the latest version
